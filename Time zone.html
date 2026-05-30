@@ -322,4 +322,169 @@
                 minute: '2-digit',
                 hour12: true,
                 weekday: 'long',
-                day: 'n
+                day: 'numeric',
+                month: 'short'
+            };
+
+            try {
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const sourceFormatter = new Intl.DateTimeFormat('en-US', sourceOptions);
+
+                const targetParts = formatter.formatToParts(sourceLocalDate);
+                const sourceParts = sourceFormatter.formatToParts(sourceLocalDate);
+
+                let targetHourStr = targetParts.find(p => p.type === 'hour').value;
+                const targetMinuteStr = targetParts.find(p => p.type === 'minute').value;
+                const targetDayPeriod = targetParts.find(p => p.type === 'dayPeriod').value;
+                
+                const finalTargetTimeString = `${targetHourStr}:${targetMinuteStr} ${targetDayPeriod}`;
+                targetTimeOutput.value = finalTargetTimeString;
+                convertedTimeDisplay.textContent = finalTargetTimeString;
+
+                baseTimeVerbose.textContent = `${sourceCountry.flag} ${sourceCountry.name} to ${targetCountry.flag} ${targetCountry.name}`;
+
+                const targetDay = targetParts.find(p => p.type === 'weekday').value;
+                const sourceDay = sourceParts.find(p => p.type === 'weekday').value;
+                
+                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const sourceDayIdx = daysOfWeek.indexOf(sourceDay);
+                const targetDayIdx = daysOfWeek.indexOf(targetDay);
+
+                let diff = targetDayIdx - sourceDayIdx;
+                if (diff < -1) diff += 7;
+                if (diff > 1) diff -= 7;
+
+                if (diff === 0) {
+                    dateOffsetBadge.textContent = "Same Day (Usi Din)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-semibold";
+                } else if (diff === 1 || diff === -6) {
+                    dateOffsetBadge.textContent = "Next Day (+1 Din Aage)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg text-xs font-semibold";
+                } else {
+                    dateOffsetBadge.textContent = "Previous Day (-1 Din Peeche)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg text-xs font-semibold";
+                }
+
+                sourceTimezoneMeta.textContent = `Conversion details at: ${sourceLocalDate.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+            } catch(e) {
+                console.error("Timezone computation error: ", e);
+            }
+        }
+
+        // Live dashboard update
+        function updateLiveDashboard() {
+            liveDashboardGrid.innerHTML = '';
+            
+            // Show popular regions in standard overview dashboard
+            const dashboardSelection = ["IN", "US_EST", "CN", "GB", "JP", "AE"];
+            const now = new Date();
+
+            dashboardSelection.forEach(id => {
+                const country = countries.find(c => c.id === id);
+                if (!country) return;
+
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: country.tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const formattedTime = formatter.format(now);
+                const tempTime = new Intl.DateTimeFormat('en-US', { timeZone: country.tz, hour: '2-digit', hour12: false }).format(now);
+                const numericHour = parseInt(tempTime, 10);
+                const isNight = numericHour < 6 || numericHour > 18;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950/40 border border-slate-800/80 p-3 rounded-xl flex items-center justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                            <span>${country.flag}</span>
+                            <span class="truncate max-w-[80px]">${country.name.split(' (')[0]}</span>
+                        </div>
+                        <div class="text-sm font-extrabold text-slate-100 tracking-tight mt-0.5">${formattedTime}</div>
+                    </div>
+                    <div>
+                        ${isNight ? 
+                            `<span class="text-indigo-400 text-xs bg-indigo-950 px-1.5 py-0.5 rounded-md border border-indigo-800/40 flex items-center gap-1">🌙 Night</span>` : 
+                            `<span class="text-amber-400 text-xs bg-amber-950/40 px-1.5 py-0.5 rounded-md border border-amber-900/30 flex items-center gap-1">☀️ Day</span>`
+                        }
+                    </div>
+                `;
+                liveDashboardGrid.appendChild(card);
+            });
+        }
+
+        // Reset to current system time
+        function setCurrentTime() {
+            const now = new Date();
+            let hours = String(now.getHours()).padStart(2, '0');
+            let minutes = String(now.getMinutes()).padStart(2, '0');
+            sourceTimeInput.value = `${hours}:${minutes}`;
+            
+            const totalMinutes = (now.getHours() * 60) + now.getMinutes();
+            timelineSlider.value = totalMinutes;
+            
+            updateSliderLabel(totalMinutes);
+            calculateTimeConversion();
+            updateLiveDashboard();
+        }
+
+        function updateSliderLabel(totalMinutes) {
+            const hrs = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            const period = hrs >= 12 ? 'PM' : 'AM';
+            const displayHrs = hrs % 12 === 0 ? 12 : hrs % 12;
+            const displayMins = String(mins).padStart(2, '0');
+            sliderLabel.textContent = `${displayHrs}:${displayMins} ${period}`;
+        }
+
+        // --- Event Listeners ---
+        sourceCountrySelect.addEventListener('change', calculateTimeConversion);
+        targetCountrySelect.addEventListener('change', calculateTimeConversion);
+
+        sourceTimeInput.addEventListener('input', () => {
+            const [h, m] = sourceTimeInput.value.split(':').map(Number);
+            const totalMins = (h * 60) + m;
+            timelineSlider.value = totalMins;
+            updateSliderLabel(totalMins);
+            calculateTimeConversion();
+        });
+
+        timelineSlider.addEventListener('input', (e) => {
+            const totalMins = parseInt(e.target.value);
+            const h = String(Math.floor(totalMins / 60)).padStart(2, '0');
+            const m = String(totalMins % 60).padStart(2, '0');
+            
+            sourceTimeInput.value = `${h}:${m}`;
+            updateSliderLabel(totalMins);
+            calculateTimeConversion();
+        });
+
+        swapBtn.addEventListener('click', () => {
+            const temp = sourceCountrySelect.value;
+            sourceCountrySelect.value = targetCountrySelect.value;
+            targetCountrySelect.value = temp;
+            calculateTimeConversion();
+        });
+
+        setCurrentBtn.addEventListener('click', setCurrentTime);
+
+        // App Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            renderDropdowns();
+            sourceCountrySelect.value = "IN";
+            targetCountrySelect.value = "US_EST";
+            setCurrentTime();
+
+            // Refresh dashboards every 10 seconds
+            setInterval(updateLiveDashboard, 10000);
+        });
+    </script>
+</body>
+</html>
+
+```
+
