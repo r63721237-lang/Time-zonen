@@ -1,0 +1,489 @@
+```html
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duniya Ka Time Zone Converter</title>
+    <!-- Tailwind CSS for sleek UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a; /* Premium Dark Navy Blue background */
+        }
+        /* Custom scrollbar for beautiful list */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <!-- Main Container -->
+    <div class="max-w-xl mx-auto w-full bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-slate-800 shadow-2xl mt-4">
+        
+        <!-- Header Section (Header block) -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-2xl mb-3 text-indigo-400 border border-indigo-500/20">
+                <!-- World Globe Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">Duniya Ka Time</h1>
+            <p class="text-slate-400 text-sm mt-1">Sabhi deshon ka samay ek sath convert karein</p>
+        </div>
+
+        <!-- Google Widget Style Convertor Display -->
+        <div class="bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80 mb-6">
+            <!-- Source Time Info Display -->
+            <div class="mb-2">
+                <span id="base-time-verbose" class="text-xs font-semibold text-indigo-400 tracking-wider uppercase">India Time (IST)</span>
+            </div>
+            <!-- Main conversion readout (Similar to Google currency style) -->
+            <div class="flex items-baseline justify-between flex-wrap gap-2">
+                <div id="converted-time-display" class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+                    --:-- --
+                </div>
+                <div id="date-offset-badge" class="px-2 py-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-medium">
+                    Same Day
+                </div>
+            </div>
+            <div class="text-slate-400 text-xs mt-2 flex items-center gap-1.5" id="source-timezone-meta">
+                <!-- Clock icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Live updates running</span>
+            </div>
+        </div>
+
+        <!-- Input Box 1: Source (Base) Country -->
+        <div class="space-y-4">
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col gap-3">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-slate-500 text-xs mb-1 font-medium">Kahan se convert karna hai:</label>
+                        <!-- Search Box for Source -->
+                        <input type="text" id="source-search" placeholder="🔍 Desh search karein..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 mb-2">
+                        <select id="source-country" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-slate-500 text-xs mb-1 font-medium">Samay (Time) chunein:</label>
+                        <!-- Extra padding to align with search box height -->
+                        <div class="hidden md:block h-8"></div> 
+                        <input type="time" id="source-time-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swapper Button -->
+            <div class="flex justify-center -my-2 relative z-10">
+                <button id="swap-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white p-2.5 rounded-full shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 active:scale-95 border border-indigo-400/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-90 md:rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Input Box 2: Target Country -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col gap-3">
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-slate-500 text-xs mb-1 font-medium">Kahan ka time dekhna hai:</label>
+                        <!-- Search Box for Target -->
+                        <input type="text" id="target-search" placeholder="🔍 Desh search karein..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 mb-2">
+                        <select id="target-country" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-slate-500 text-xs mb-1 font-medium">Converted Samay:</label>
+                        <div class="hidden md:block h-8"></div>
+                        <input type="text" id="target-time-output" readonly class="w-full bg-slate-900/50 border border-slate-800 text-slate-400 rounded-lg px-3 py-2 text-sm font-semibold select-all" placeholder="Time automatically calculates">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Time Timeline Slider -->
+        <div class="mt-8 bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Timeline Slider</span>
+                <span id="slider-label" class="text-xs text-indigo-400 font-bold bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">12:00 PM</span>
+            </div>
+            <input type="range" id="timeline-slider" min="0" max="1439" value="720" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-medium">
+                <span>Midnight (12 AM)</span>
+                <span>Subah (6 AM)</span>
+                <span>Dopehar (12 PM)</span>
+                <span>Shaam (6 PM)</span>
+                <span>Raat (11:59 PM)</span>
+            </div>
+        </div>
+
+        <!-- Quick Reset/Live Button -->
+        <div class="mt-6 flex gap-3">
+            <button id="set-current-btn" class="flex-1 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-slate-200 py-3 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-98 border border-slate-700 flex items-center justify-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Abhi Ka Live Time Set Karein
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Multi-Country Live Dashboard -->
+    <div class="max-w-xl mx-auto w-full bg-slate-900/60 backdrop-blur-md rounded-3xl p-5 border border-slate-800/50 shadow-xl mt-6">
+        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span class="inline-block w-1.5 h-3 bg-indigo-500 rounded-sm"></span>
+            Khaas Deshon ka Live Time Dashboard
+        </h2>
+        <div class="grid grid-cols-2 gap-3" id="live-dashboard-grid">
+            <!-- Dynamic Country Cards will render here -->
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-500 mt-8 mb-4">
+        Banaya gaya hai aapke liye Google Widgets style premium layout ke sath.
+    </footer>
+
+    <!-- JavaScript For Time Zone Calculations -->
+    <script>
+        // Lagbhag sabhi pramukh deshon ka data timezone aur flags ke sath
+        const countries = [
+            { id: "IN", name: "India (IST)", tz: "Asia/Kolkata", flag: "🇮🇳" },
+            { id: "US_EST", name: "USA (New York - EST)", tz: "America/New_York", flag: "🇺🇸" },
+            { id: "US_PST", name: "USA (Los Angeles - PST)", tz: "America/Los_Angeles", flag: "🇺🇸" },
+            { id: "US_CST", name: "USA (Chicago - CST)", tz: "America/Chicago", flag: "🇺🇸" },
+            { id: "GB", name: "United Kingdom (London)", tz: "Europe/London", flag: "🇬🇧" },
+            { id: "CN", name: "China (Beijing)", tz: "Asia/Shanghai", flag: "🇨🇳" },
+            { id: "JP", name: "Japan (Tokyo)", tz: "Asia/Tokyo", flag: "🇯🇵" },
+            { id: "AE", name: "UAE (Dubai)", tz: "Asia/Dubai", flag: "🇦🇪" },
+            { id: "AU_SYD", name: "Australia (Sydney)", tz: "Australia/Sydney", flag: "🇦🇺" },
+            { id: "AU_PER", name: "Australia (Perth)", tz: "Australia/Perth", flag: "🇦🇺" },
+            { id: "SG", name: "Singapore", tz: "Asia/Singapore", flag: "🇸🇬" },
+            { id: "DE", name: "Germany (Berlin)", tz: "Europe/Berlin", flag: "🇩🇪" },
+            { id: "FR", name: "France (Paris)", tz: "Europe/Paris", flag: "🇫🇷" },
+            { id: "CA_TOR", name: "Canada (Toronto)", tz: "America/Toronto", flag: "🇨🇦" },
+            { id: "CA_VAN", name: "Canada (Vancouver)", tz: "America/Vancouver", flag: "🇨🇦" },
+            { id: "RU", name: "Russia (Moscow)", tz: "Europe/Moscow", flag: "🇷🇺" },
+            { id: "SA", name: "Saudi Arabia (Riyadh)", tz: "Asia/Riyadh", flag: "🇸🇦" },
+            { id: "ZA", name: "South Africa (Johannesburg)", tz: "Africa/Johannesburg", flag: "🇿🇦" },
+            { id: "BR", name: "Brazil (São Paulo)", tz: "America/Sao_Paulo", flag: "🇧🇷" },
+            { id: "AR", name: "Argentina (Buenos Aires)", tz: "America/Argentina/Buenos_Aires", flag: "🇦🇷" },
+            { id: "MX", name: "Mexico (Mexico City)", tz: "America/Mexico_City", flag: "🇲🇽" },
+            { id: "PK", name: "Pakistan (Islamabad)", tz: "Asia/Karachi", flag: "🇵🇰" },
+            { id: "BD", name: "Bangladesh (Dhaka)", tz: "Asia/Dhaka", flag: "🇧🇩" },
+            { id: "LK", name: "Sri Lanka (Colombo)", tz: "Asia/Colombo", flag: "🇱🇰" },
+            { id: "NP", name: "Nepal (Kathmandu)", tz: "Asia/Kathmandu", flag: "🇳🇵" },
+            { id: "NZ", name: "New Zealand (Auckland)", tz: "Pacific/Auckland", flag: "🇳🇿" },
+            { id: "KR", name: "South Korea (Seoul)", tz: "Asia/Seoul", flag: "🇰🇷" },
+            { id: "ID", name: "Indonesia (Jakarta)", tz: "Asia/Jakarta", flag: "🇮🇩" },
+            { id: "MY", name: "Malaysia (Kuala Lumpur)", tz: "Asia/Kuala_Lumpur", flag: "🇲🇾" },
+            { id: "TH", name: "Thailand (Bangkok)", tz: "Asia/Bangkok", flag: "🇹🇭" },
+            { id: "TR", name: "Turkey (Istanbul)", tz: "Europe/Istanbul", flag: "🇹🇷" },
+            { id: "EG", name: "Egypt (Cairo)", tz: "Africa/Cairo", flag: "🇪🇬" },
+            { id: "NG", name: "Nigeria (Lagos)", tz: "Africa/Lagos", flag: "🇳🇬" },
+            { id: "KE", name: "Kenya (Nairobi)", tz: "Africa/Nairobi", flag: "🇰🇪" },
+            { id: "ES", name: "Spain (Madrid)", tz: "Europe/Madrid", flag: "🇪🇸" },
+            { id: "IT", name: "Italy (Rome)", tz: "Europe/Rome", flag: "🇮🇹" },
+            { id: "CH", name: "Switzerland (Zurich)", tz: "Europe/Zurich", flag: "🇨🇭" },
+            { id: "NL", name: "Netherlands (Amsterdam)", tz: "Europe/Amsterdam", flag: "🇳🇱" },
+            { id: "SE", name: "Sweden (Stockholm)", tz: "Europe/Stockholm", flag: "🇸🇪" },
+            { id: "QA", name: "Qatar (Doha)", tz: "Asia/Qatar", flag: "🇶🇦" },
+            { id: "KW", name: "Kuwait", tz: "Asia/Kuwait", flag: "🇰🇼" },
+            { id: "PH", name: "Philippines (Manila)", tz: "Asia/Manila", flag: "🇵🇭" },
+            { id: "VN", name: "Vietnam (Hanoi)", tz: "Asia/Ho_Chi_Minh", flag: "🇻🇳" },
+            { id: "HK", name: "Hong Kong", tz: "Asia/Hong_Kong", flag: "🇭🇰" },
+            { id: "IL", name: "Israel (Jerusalem)", tz: "Asia/Jerusalem", flag: "🇮🇱" },
+            { id: "UA", name: "Ukraine (Kyiv)", tz: "Europe/Kyiv", flag: "🇺🇦" },
+            { id: "IE", name: "Ireland (Dublin)", tz: "Europe/Dublin", flag: "🇮🇪" },
+            { id: "NO", name: "Norway (Oslo)", tz: "Europe/Oslo", flag: "🇳🇴" },
+            { id: "DK", name: "Denmark (Copenhagen)", tz: "Europe/Copenhagen", flag: "🇩🇰" },
+            { id: "FI", name: "Finland (Helsinki)", tz: "Europe/Helsinki", flag: "🇫🇮" },
+            { id: "PL", name: "Poland (Warsaw)", tz: "Europe/Warsaw", flag: "🇵🇱" },
+            { id: "AT", name: "Austria (Vienna)", tz: "Europe/Vienna", flag: "🇦🇹" },
+            { id: "BE", name: "Belgium (Brussels)", tz: "Europe/Brussels", flag: "🇧🇪" },
+            { id: "PT", name: "Portugal (Lisbon)", tz: "Europe/Lisbon", flag: "🇵🇹" },
+            { id: "GR", name: "Greece (Athens)", tz: "Europe/Athens", flag: "🇬🇷" },
+            { id: "CL", name: "Chile (Santiago)", tz: "America/Santiago", flag: "🇨🇱" },
+            { id: "CO", name: "Colombia (Bogota)", tz: "America/Bogota", flag: "🇨🇴" },
+            { id: "PE", name: "Peru (Lima)", tz: "America/Lima", flag: "🇵🇪" },
+            { id: "MA", name: "Morocco (Casablanca)", tz: "Africa/Casablanca", flag: "🇲🇦" }
+        ];
+
+        // DOM elements
+        const sourceCountrySelect = document.getElementById('source-country');
+        const targetCountrySelect = document.getElementById('target-country');
+        const sourceSearch = document.getElementById('source-search');
+        const targetSearch = document.getElementById('target-search');
+        
+        const sourceTimeInput = document.getElementById('source-time-input');
+        const targetTimeOutput = document.getElementById('target-time-output');
+        const swapBtn = document.getElementById('swap-btn');
+        const timelineSlider = document.getElementById('timeline-slider');
+        const sliderLabel = document.getElementById('slider-label');
+        const setCurrentBtn = document.getElementById('set-current-btn');
+        const convertedTimeDisplay = document.getElementById('converted-time-display');
+        const baseTimeVerbose = document.getElementById('base-time-verbose');
+        const dateOffsetBadge = document.getElementById('date-offset-badge');
+        const sourceTimezoneMeta = document.getElementById('source-timezone-meta');
+        const liveDashboardGrid = document.getElementById('live-dashboard-grid');
+
+        // Dropdowns ko list se bharne ka function (filter functionality ke sath)
+        function renderDropdowns(sourceFilter = '', targetFilter = '') {
+            const currentSourceVal = sourceCountrySelect.value || "IN";
+            const currentTargetVal = targetCountrySelect.value || "US_EST";
+
+            sourceCountrySelect.innerHTML = '';
+            targetCountrySelect.innerHTML = '';
+
+            countries.forEach(country => {
+                const text = `${country.name}`.toLowerCase();
+                
+                // For Source Dropdown
+                if (text.includes(sourceFilter.toLowerCase())) {
+                    const opt = document.createElement('option');
+                    opt.value = country.id;
+                    opt.textContent = `${country.flag} ${country.name}`;
+                    sourceCountrySelect.appendChild(opt);
+                }
+
+                // For Target Dropdown
+                if (text.includes(targetFilter.toLowerCase())) {
+                    const opt = document.createElement('option');
+                    opt.value = country.id;
+                    opt.textContent = `${country.flag} ${country.name}`;
+                    targetCountrySelect.appendChild(opt);
+                }
+            });
+
+            // Restoration of values if still available in filtered options
+            if ([...sourceCountrySelect.options].some(o => o.value === currentSourceVal)) {
+                sourceCountrySelect.value = currentSourceVal;
+            }
+            if ([...targetCountrySelect.options].some(o => o.value === currentTargetVal)) {
+                targetCountrySelect.value = currentTargetVal;
+            }
+        }
+
+        // Search text change events
+        sourceSearch.addEventListener('input', (e) => {
+            renderDropdowns(e.target.value, targetSearch.value);
+            calculateTimeConversion();
+        });
+
+        targetSearch.addEventListener('input', (e) => {
+            renderDropdowns(sourceSearch.value, e.target.value);
+            calculateTimeConversion();
+        });
+
+        // Live calculations engine
+        function calculateTimeConversion() {
+            const sourceId = sourceCountrySelect.value;
+            const targetId = targetCountrySelect.value;
+            
+            const sourceCountry = countries.find(c => c.id === sourceId);
+            const targetCountry = countries.find(c => c.id === targetId);
+
+            if (!sourceCountry || !targetCountry) return;
+
+            const now = new Date();
+            const [hours, minutes] = sourceTimeInput.value.split(':').map(Number);
+            
+            // Local date representing configured source country time zone
+            const sourceLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+            
+            const options = {
+                timeZone: targetCountry.tz,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+                weekday: 'long',
+                day: 'numeric',
+                month: 'short'
+            };
+
+            const sourceOptions = {
+                timeZone: sourceCountry.tz,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+                weekday: 'long',
+                day: 'numeric',
+                month: 'short'
+            };
+
+            try {
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const sourceFormatter = new Intl.DateTimeFormat('en-US', sourceOptions);
+
+                const targetParts = formatter.formatToParts(sourceLocalDate);
+                const sourceParts = sourceFormatter.formatToParts(sourceLocalDate);
+
+                let targetHourStr = targetParts.find(p => p.type === 'hour').value;
+                const targetMinuteStr = targetParts.find(p => p.type === 'minute').value;
+                const targetDayPeriod = targetParts.find(p => p.type === 'dayPeriod').value;
+                
+                const finalTargetTimeString = `${targetHourStr}:${targetMinuteStr} ${targetDayPeriod}`;
+                targetTimeOutput.value = finalTargetTimeString;
+                convertedTimeDisplay.textContent = finalTargetTimeString;
+
+                baseTimeVerbose.textContent = `${sourceCountry.flag} ${sourceCountry.name} to ${targetCountry.flag} ${targetCountry.name}`;
+
+                const targetDay = targetParts.find(p => p.type === 'weekday').value;
+                const sourceDay = sourceParts.find(p => p.type === 'weekday').value;
+                
+                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const sourceDayIdx = daysOfWeek.indexOf(sourceDay);
+                const targetDayIdx = daysOfWeek.indexOf(targetDay);
+
+                let diff = targetDayIdx - sourceDayIdx;
+                if (diff < -1) diff += 7;
+                if (diff > 1) diff -= 7;
+
+                if (diff === 0) {
+                    dateOffsetBadge.textContent = "Same Day (Usi Din)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-xs font-semibold";
+                } else if (diff === 1 || diff === -6) {
+                    dateOffsetBadge.textContent = "Next Day (+1 Din Aage)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg text-xs font-semibold";
+                } else {
+                    dateOffsetBadge.textContent = "Previous Day (-1 Din Peeche)";
+                    dateOffsetBadge.className = "px-2.5 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg text-xs font-semibold";
+                }
+
+                sourceTimezoneMeta.textContent = `Conversion details at: ${sourceLocalDate.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+            } catch(e) {
+                console.error("Timezone computation error: ", e);
+            }
+        }
+
+        // Live dashboard update
+        function updateLiveDashboard() {
+            liveDashboardGrid.innerHTML = '';
+            
+            // Show popular regions in standard overview dashboard
+            const dashboardSelection = ["IN", "US_EST", "CN", "GB", "JP", "AE"];
+            const now = new Date();
+
+            dashboardSelection.forEach(id => {
+                const country = countries.find(c => c.id === id);
+                if (!country) return;
+
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: country.tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                const formattedTime = formatter.format(now);
+                const tempTime = new Intl.DateTimeFormat('en-US', { timeZone: country.tz, hour: '2-digit', hour12: false }).format(now);
+                const numericHour = parseInt(tempTime, 10);
+                const isNight = numericHour < 6 || numericHour > 18;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-950/40 border border-slate-800/80 p-3 rounded-xl flex items-center justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                            <span>${country.flag}</span>
+                            <span class="truncate max-w-[80px]">${country.name.split(' (')[0]}</span>
+                        </div>
+                        <div class="text-sm font-extrabold text-slate-100 tracking-tight mt-0.5">${formattedTime}</div>
+                    </div>
+                    <div>
+                        ${isNight ? 
+                            `<span class="text-indigo-400 text-xs bg-indigo-950 px-1.5 py-0.5 rounded-md border border-indigo-800/40 flex items-center gap-1">🌙 Night</span>` : 
+                            `<span class="text-amber-400 text-xs bg-amber-950/40 px-1.5 py-0.5 rounded-md border border-amber-900/30 flex items-center gap-1">☀️ Day</span>`
+                        }
+                    </div>
+                `;
+                liveDashboardGrid.appendChild(card);
+            });
+        }
+
+        // Reset to current system time
+        function setCurrentTime() {
+            const now = new Date();
+            let hours = String(now.getHours()).padStart(2, '0');
+            let minutes = String(now.getMinutes()).padStart(2, '0');
+            sourceTimeInput.value = `${hours}:${minutes}`;
+            
+            const totalMinutes = (now.getHours() * 60) + now.getMinutes();
+            timelineSlider.value = totalMinutes;
+            
+            updateSliderLabel(totalMinutes);
+            calculateTimeConversion();
+            updateLiveDashboard();
+        }
+
+        function updateSliderLabel(totalMinutes) {
+            const hrs = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            const period = hrs >= 12 ? 'PM' : 'AM';
+            const displayHrs = hrs % 12 === 0 ? 12 : hrs % 12;
+            const displayMins = String(mins).padStart(2, '0');
+            sliderLabel.textContent = `${displayHrs}:${displayMins} ${period}`;
+        }
+
+        // --- Event Listeners ---
+        sourceCountrySelect.addEventListener('change', calculateTimeConversion);
+        targetCountrySelect.addEventListener('change', calculateTimeConversion);
+
+        sourceTimeInput.addEventListener('input', () => {
+            const [h, m] = sourceTimeInput.value.split(':').map(Number);
+            const totalMins = (h * 60) + m;
+            timelineSlider.value = totalMins;
+            updateSliderLabel(totalMins);
+            calculateTimeConversion();
+        });
+
+        timelineSlider.addEventListener('input', (e) => {
+            const totalMins = parseInt(e.target.value);
+            const h = String(Math.floor(totalMins / 60)).padStart(2, '0');
+            const m = String(totalMins % 60).padStart(2, '0');
+            
+            sourceTimeInput.value = `${h}:${m}`;
+            updateSliderLabel(totalMins);
+            calculateTimeConversion();
+        });
+
+        swapBtn.addEventListener('click', () => {
+            const temp = sourceCountrySelect.value;
+            sourceCountrySelect.value = targetCountrySelect.value;
+            targetCountrySelect.value = temp;
+            calculateTimeConversion();
+        });
+
+        setCurrentBtn.addEventListener('click', setCurrentTime);
+
+        // App Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            renderDropdowns();
+            sourceCountrySelect.value = "IN";
+            targetCountrySelect.value = "US_EST";
+            setCurrentTime();
+
+            // Refresh dashboards every 10 seconds
+            setInterval(updateLiveDashboard, 10000);
+        });
+    </script>
+</body>
+</html>
+
+```
